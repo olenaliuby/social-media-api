@@ -29,6 +29,9 @@ class LogoutView(TokenBlacklistView):
     """Logout the authenticated user by blacklisting the refresh token"""
     """rest_framework_simplejwt.token_blacklist app is required"""
 
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == 200:
