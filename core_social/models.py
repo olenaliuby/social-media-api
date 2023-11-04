@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 from core_social.upload_to_path import UploadToPath
 
@@ -17,7 +18,6 @@ class Profile(models.Model):
     profile_image = models.ImageField(
         blank=True, null=True, upload_to=UploadToPath("profile-images/")
     )
-    last_online = models.DateTimeField()
 
     @property
     def full_name(self):
