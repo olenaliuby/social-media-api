@@ -1,7 +1,11 @@
 from django.db.models import Count, Q
 from rest_framework import mixins, status
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    get_object_or_404,
+    RetrieveUpdateDestroyAPIView,
+    ListAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -12,6 +16,8 @@ from core_social.serializers import (
     ProfileSerializer,
     ProfileListSerializer,
     ProfileDetailSerializer,
+    FollowerRelationshipSerializer,
+    FollowingRelationshipSerializer,
 )
 
 
@@ -127,3 +133,23 @@ class ProfileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericVi
                 {"detail": "You are not following this user."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+class ProfileFollowersView(ListAPIView):
+    serializer_class = FollowerRelationshipSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.profile.followers.all()
+
+
+class ProfileFollowingView(ListAPIView):
+    serializer_class = FollowingRelationshipSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.profile.following.all()
