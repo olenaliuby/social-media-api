@@ -31,3 +31,24 @@ class CurrentUserProfileView(RetrieveUpdateDestroyAPIView):
 class ProfileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileListSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Get list of profiles and filter by username and name"""
+        queryset = super().get_queryset()
+
+        username = self.request.query_params.get("username")
+        first_name = self.request.query_params.get("first_name")
+        last_name = self.request.query_params.get("last_name")
+
+        if username is not None:
+            queryset = queryset.filter(user__username__icontains=username)
+
+        if first_name is not None:
+            queryset = queryset.filter(first_name__icontains=first_name)
+
+        if last_name is not None:
+            queryset = queryset.filter(last_name__icontains=last_name)
+
+        return queryset
