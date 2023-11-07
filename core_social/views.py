@@ -188,6 +188,15 @@ class PostViewSet(viewsets.ModelViewSet):
             )
         )
 
+        content = self.request.query_params.get("content")
+        author_username = self.request.query_params.get("author_username")
+
+        if author_username is not None:
+            queryset = queryset.filter(author__username__icontains=author_username)
+
+        if content is not None:
+            queryset = queryset.filter(content__icontains=content)
+
         return queryset
 
     def get_serializer_class(self):
