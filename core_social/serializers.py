@@ -1,5 +1,6 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 
 from .models import Profile, FollowingRelationships, Post, Comment
 
@@ -35,11 +36,16 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ProfileListSerializer(ProfileSerializer):
+    full_name = serializers.SerializerMethodField()
     followed_by_me = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Profile
         fields = ("id", "profile_image", "full_name", "username", "followed_by_me")
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_full_name(self, obj):
+        return obj.full_name
 
 
 class FollowingRelationshipSerializer(serializers.ModelSerializer):

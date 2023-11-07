@@ -1,4 +1,7 @@
 from django.db.models import Count, Q, OuterRef, Exists, Subquery
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import (
@@ -97,6 +100,28 @@ class ProfileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericVi
 
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "username",
+                type=OpenApiTypes.STR,
+                description="Filter by username example: ?username=john",
+            ),
+            OpenApiParameter(
+                "first_name",
+                type=OpenApiTypes.STR,
+                description="Filter by first name example: ?first_name=john",
+            ),
+            OpenApiParameter(
+                "last_name",
+                type=OpenApiTypes.STR,
+                description="Filter by last name example: ?last_name=john",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     @action(
         detail=True,
         methods=["POST"],
@@ -179,6 +204,15 @@ class PostViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return PostListSerializer
+        if self.action == "retrieve":
+            return PostDetailSerializer
+        if self.action == "upload_image":
+            return PostImageSerializer
+        return PostSerializer
+
     def get_queryset(self):
         user_profile = self.request.user.profile
         queryset = (
@@ -214,17 +248,25 @@ class PostViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return PostListSerializer
-        if self.action == "retrieve":
-            return PostDetailSerializer
-        if self.action == "upload_image":
-            return PostImageSerializer
-        return PostSerializer
-
     def perform_create(self, serializer):
         serializer.save(author=self.request.user.profile)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "content",
+                type=OpenApiTypes.STR,
+                description="Filter by content example: ?content=hello",
+            ),
+            OpenApiParameter(
+                "author_username",
+                type=OpenApiTypes.STR,
+                description="Filter by author username example: ?author_username=john",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @action(
         methods=["POST"],
