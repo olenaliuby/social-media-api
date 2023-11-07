@@ -53,6 +53,7 @@ class Post(models.Model):
     image = models.ImageField(
         blank=True, null=True, upload_to=UploadToPath("post-images/")
     )
+    scheduled_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
         ordering = ["-created_at"]

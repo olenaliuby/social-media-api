@@ -28,6 +28,7 @@ from core_social.serializers import (
     CommentSerializer,
 )
 from core_social.permissions import IsAuthorOrReadOnly
+from core_social.tasks import create_scheduled_post
 
 
 class CurrentUserProfileView(RetrieveUpdateDestroyAPIView):
@@ -249,7 +250,15 @@ class PostViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user.profile)
+        scheduled_at = self.request.data.get("scheduled_at")
+
+        if scheduled_at:
+            serializer.validated_data["author_id"] = self.request.user.profile.id
+            create_scheduled_post.apply_async(
+                args=[serializer.validated_data], eta=scheduled_at
+            )
+        else:
+            serializer.save(author=self.request.user.profile)
 
     @extend_schema(
         parameters=[

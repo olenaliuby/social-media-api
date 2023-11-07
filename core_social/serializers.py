@@ -118,6 +118,7 @@ class PostSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(required=False, read_only=True)
     likes_count = serializers.IntegerField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
+    scheduled_at = serializers.DateTimeField(required=False, write_only=True)
 
     class Meta:
         model = Post
@@ -131,6 +132,7 @@ class PostSerializer(serializers.ModelSerializer):
             "image",
             "likes_count",
             "comments_count",
+            "scheduled_at",
         )
 
 
