@@ -51,7 +51,7 @@ class ProfileListSerializer(ProfileSerializer):
 
 class FollowingRelationshipSerializer(serializers.ModelSerializer):
     profile_id = serializers.IntegerField(source="following.id", read_only=True)
-    username = serializers.CharField(source="follower.username")
+    username = serializers.CharField(source="following.username")
 
     class Meta:
         model = FollowingRelationships
@@ -60,7 +60,7 @@ class FollowingRelationshipSerializer(serializers.ModelSerializer):
 
 class FollowerRelationshipSerializer(serializers.ModelSerializer):
     profile_id = serializers.IntegerField(source="follower.id", read_only=True)
-    username = serializers.CharField(source="following.username")
+    username = serializers.CharField(source="follower.username")
 
     class Meta:
         model = FollowingRelationships
