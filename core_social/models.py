@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.utils import timezone
 
 from core_social.upload_to_path import UploadToPath
 
@@ -54,14 +53,6 @@ class Post(models.Model):
     image = models.ImageField(
         blank=True, null=True, upload_to=UploadToPath("post-images/")
     )
-
-    @property
-    def likes_count(self):
-        return self.likes.count()
-
-    @property
-    def comments_count(self):
-        return self.comments.count()
 
     class Meta:
         ordering = ["-created_at"]
