@@ -35,18 +35,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ProfileListSerializer(ProfileSerializer):
-    followed_by_me = serializers.SerializerMethodField()
+    followed_by_me = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Profile
         fields = ("id", "profile_image", "full_name", "username", "followed_by_me")
-
-    def get_followed_by_me(self, obj):
-        request = self.context.get("request", None)
-        if request is not None:
-            user_profile = get_object_or_404(Profile, user=request.user)
-            return obj.followers.filter(follower=user_profile).exists()
-        return False
 
 
 class FollowingRelationshipSerializer(serializers.ModelSerializer):

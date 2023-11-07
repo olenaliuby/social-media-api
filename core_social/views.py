@@ -35,6 +35,7 @@ class CurrentUserProfileView(RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return (
             Profile.objects.filter(user=self.request.user)
+            .select_related("user")
             .prefetch_related("following", "followers")
             .annotate(
                 followers_count=Count("followers"), following_count=Count("following")
@@ -53,7 +54,6 @@ class CurrentUserProfileView(RetrieveUpdateDestroyAPIView):
 
 
 class ProfileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet):
-    queryset = Profile.objects.all()
     serializer_class = ProfileListSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -66,7 +66,21 @@ class ProfileViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericVi
         return ProfileListSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = (
+            Profile.objects.prefetch_related(
+                "following__following", "followers__follower"
+            )
+            .select_related("user")
+            .annotate(
+                followed_by_me=Exists(
+                    FollowingRelationships.objects.filter(
+                        follower__user=self.request.user, following=OuterRef("pk")
+                    )
+                ),
+                followers_count=Count("followers"),
+                following_count=Count("following"),
+            )
+        )
 
         username = self.request.query_params.get("username")
         first_name = self.request.query_params.get("first_name")
