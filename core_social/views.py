@@ -225,3 +225,44 @@ class PostViewSet(viewsets.ModelViewSet):
             {"detail": "Image uploaded successfully."},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        url_path="like",
+    )
+    def like(self, request, pk=None):
+        """Endpoint to like a post"""
+        post = get_object_or_404(Post, pk=pk)
+        user_profile = request.user.profile
+        if Like.objects.filter(profile=user_profile, post=post).exists():
+            return Response(
+                {"detail": "You have already liked this post."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        Like.objects.create(profile=user_profile, post=post)
+        return Response(
+            {"detail": "You liked this post."}, status=status.HTTP_204_NO_CONTENT
+        )
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        url_path="unlike",
+    )
+    def unlike(self, request, pk=None):
+        """Endpoint to unlike a post"""
+        post = get_object_or_404(Post, pk=pk)
+        user_profile = request.user.profile
+        try:
+            like = Like.objects.get(profile=user_profile, post=post)
+            like.delete()
+            return Response(
+                {"detail": "You unliked this post."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Like.DoesNotExist:
+            return Response(
+                {"detail": "You have not liked this post."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
