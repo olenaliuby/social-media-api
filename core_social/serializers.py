@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
-from .models import Profile, FollowingRelationships
+from .models import Profile, FollowingRelationships, Post, Comment
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -85,4 +85,71 @@ class ProfileDetailSerializer(ProfileSerializer):
             "bio",
             "followers",
             "following",
+        )
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    post_id = serializers.IntegerField(source="post.id", read_only=True)
+    author = serializers.CharField(source="author.username", read_only=True)
+    commented_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ("id", "author", "post_id", "content", "commented_at")
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    liked_by = serializers.CharField(source="profile.username", read_only=True)
+
+    class Meta:
+        model = Post
+        fields = ("id", "liked_by")
+
+
+class PostImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ("id", "image")
+
+
+class PostSerializer(serializers.ModelSerializer):
+    author_username = serializers.CharField(source="author.username", read_only=True)
+    author_full_name = serializers.CharField(source="author.full_name", read_only=True)
+    author_image = serializers.ImageField(source="author.profile_image", read_only=True)
+    image = serializers.ImageField(required=False, read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Post
+        fields = (
+            "id",
+            "author_username",
+            "author_full_name",
+            "author_image",
+            "content",
+            "created_at",
+            "image",
+            "likes_count",
+            "comments_count",
+        )
+
+
+class PostListSerializer(PostSerializer):
+    liked_by_user = serializers.BooleanField(read_only=True)
+
+    class Meta(PostSerializer.Meta):
+        fields = PostSerializer.Meta.fields + ("liked_by_user",)
+
+
+class PostDetailSerializer(PostSerializer):
+    liked_by_user = serializers.BooleanField(read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+    likes = LikeSerializer(many=True, read_only=True)
+
+    class Meta(PostSerializer.Meta):
+        fields = PostSerializer.Meta.fields + (
+            "liked_by_user",
+            "comments",
+            "likes",
         )

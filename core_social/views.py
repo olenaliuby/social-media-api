@@ -1,5 +1,5 @@
-from django.db.models import Count, Q
-from rest_framework import mixins, status
+from django.db.models import Count, Q, OuterRef, Exists, Subquery
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import (
     get_object_or_404,
@@ -11,14 +11,19 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core_social.models import Profile, FollowingRelationships
+from core_social.models import Profile, FollowingRelationships, Post, Like, Comment
 from core_social.serializers import (
     ProfileSerializer,
     ProfileListSerializer,
     ProfileDetailSerializer,
     FollowerRelationshipSerializer,
     FollowingRelationshipSerializer,
+    PostListSerializer,
+    PostImageSerializer,
+    PostSerializer,
+    PostDetailSerializer,
 )
+from core_social.permissions import IsAuthorOrReadOnly
 
 
 class CurrentUserProfileView(RetrieveUpdateDestroyAPIView):
@@ -153,3 +158,61 @@ class ProfileFollowingView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return user.profile.following.all()
+
+
+class PostViewSet(viewsets.ModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+
+    def get_queryset(self):
+        user_profile = self.request.user.profile
+        queryset = (
+            Post.objects.prefetch_related("likes__profile", "comments__author")
+            .select_related("author")
+            .annotate(
+                likes_count=Subquery(
+                    Like.objects.filter(post=OuterRef("pk"))
+                    .values("post")
+                    .annotate(cnt=Count("post"))
+                    .values("cnt")
+                ),
+                comments_count=Subquery(
+                    Comment.objects.filter(post=OuterRef("pk"))
+                    .values("post")
+                    .annotate(cnt=Count("post"))
+                    .values("cnt")
+                ),
+                liked_by_user=Exists(
+                    Like.objects.filter(profile=user_profile, post=OuterRef("pk"))
+                ),
+            )
+        )
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return PostListSerializer
+        if self.action == "retrieve":
+            return PostDetailSerializer
+        if self.action == "upload_image":
+            return PostImageSerializer
+        return PostSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user.profile)
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        url_path="upload-image",
+    )
+    def upload_image(self, request, pk=None):
+        """Endpoint to upload an image to a post"""
+        post = get_object_or_404(Post, pk=pk)
+        post.image = request.data.get("image")
+        post.save()
+        return Response(
+            {"detail": "Image uploaded successfully."},
+            status=status.HTTP_204_NO_CONTENT,
+        )

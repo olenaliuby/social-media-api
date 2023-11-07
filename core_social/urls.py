@@ -5,10 +5,12 @@ from core_social.views import (
     CurrentUserProfileView,
     ProfileFollowersView,
     ProfileFollowingView,
+    PostViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"profiles", ProfileViewSet, basename="profiles")
+router.register(r"posts", PostViewSet, basename="posts")
 
 
 urlpatterns = [
