@@ -266,3 +266,40 @@ class PostViewSet(viewsets.ModelViewSet):
                 {"detail": "You have not liked this post."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    @action(
+        methods=["GET"],
+        detail=False,
+        url_path="my-posts",
+    )
+    def my_posts(self, request):
+        """Endpoint to get all posts from the user"""
+        user_profile = request.user.profile
+        queryset = self.get_queryset().filter(author=user_profile)
+        serializer = PostListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(
+        methods=["GET"],
+        detail=False,
+        url_path="feed",
+    )
+    def feed(self, request):
+        """Endpoint to get all posts from followed users"""
+        user_profile = request.user.profile
+        followed_profiles = user_profile.following.values_list("following", flat=True)
+        queryset = self.get_queryset().filter(author__in=followed_profiles)
+        serializer = PostListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(
+        methods=["GET"],
+        detail=False,
+        url_path="liked",
+    )
+    def liked(self, request):
+        """Endpoint to get all posts liked by the user"""
+        user_profile = request.user.profile
+        queryset = self.get_queryset().filter(likes__profile=user_profile)
+        serializer = PostListSerializer(queryset, many=True)
+        return Response(serializer.data)
